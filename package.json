@@ -1,0 +1,42 @@
+{
+  "name": "test-runner-js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Akeem McLennon",
+  "license": "Proprietary",
+  "devDependencies": {
+    "babel": "^6.5.2",
+    "babel-eslint": "^5.0.0",
+    "babel-preset-es2015": "^6.5.0",
+    "babelify": "^7.2.0",
+    "browserify": "^13.0.0",
+    "chai": "^3.5.0",
+    "envify": "^4.0.0",
+    "gulp": "^3.9.1",
+    "gulp-uglifyjs": "^0.6.2",
+    "karma": "^1.3.0",
+    "karma-babel-preprocessor": "^6.0.1",
+    "karma-browserify": "^5.1.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-mocha": "^1.2.0",
+    "karma-phantomjs-launcher": "^1.0.0",
+    "mocha": "^3.1.2",
+    "sinon": "^1.17.6",
+    "vinyl-buffer": "^1.0.0",
+    "vinyl-source-stream": "^1.1.0",
+    "watchify": "^3.8.0"
+  },
+  "dependencies": {
+    "jsondiffpatch": "^0.1.41",
+    "yaku": "^0.17.9"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  }
+}
