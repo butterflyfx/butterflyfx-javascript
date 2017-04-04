@@ -1,49 +1,38 @@
-var https = require('https');
-var fs = require('fs');
-var Promise = require('yaku');
-var path = require('path');
-var os = require('os');
-
-var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/file/butterflyfx-downloads/tunnelclient/"
-
-function getDownloadUrl(){
-    var platform = os.platform();
-    var arch = os.arch();
-    if (platform === 'linux' && arch === 'x64') {
-        return DOWNLOAD_URL_ROOT + 'butterflyfx-tunnel-linux'
-    } else if (platform === 'linux' && arch == 'ia32') {
-        return DOWNLOAD_URL_ROOT + 'butterflyfx-tunnel-linux'
-    } else if (platform === 'darwin') {
-        return DOWNLOAD_URL_ROOT + 'butterflyfx-tunnel-mac'
-    } else if (platform === 'win32') {
-        return DOWNLOAD_URL_ROOT + 'butterflyfx-tunnel-win32.exe'
-    } else {
-        return null
-    }
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var tunnel_1 = require("./tunnel");
+var https = require("https");
+var yaku_1 = require("yaku");
+var fs = require("fs");
+var path = require("path");
+var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/file/butterflyfx-downloads/tunnelclient/";
+function getDownloadUrl() {
+    return DOWNLOAD_URL_ROOT + tunnel_1.getTunnelClientFilename();
 }
-
-function download(url, dest, cb) {
-    return new Promise(function(resolve,reject){
+function download(url, dest) {
+    return new yaku_1.default(function (resolve, reject) {
         var file = fs.createWriteStream(dest);
-        var request = https.get(url, function(response) {
+        var request = https.get(url, function (response) {
             response.pipe(file);
-            file.on('finish', function() {
+            file.on('finish', function () {
                 fs.chmodSync(dest, 755);
-                file.close(resolve);  // close() is async, call cb after close completes.
+                file.close(); // close() is async, call cb after close completes.
+                resolve();
             });
-        }).on('error', function(err) { // Handle errors
+        }).on('error', function (err) {
             fs.unlink(dest); // Delete the file async. (But we don't check the result)
             reject(err.message);
         });
-    })  
-};
+    });
+}
+;
+var filename = tunnel_1.getTunnelClientFilename();
 var url = getDownloadUrl();
-var temp = url.split('/');
-var filename = temp[temp.length - 1];
-var destination = path.join(__dirname, filename)
+var destination = path.join(__dirname, filename);
 console.log("Downloading...");
-download(url, destination).then(()=>{
+download(url, destination).then(function () {
     console.log("Success!");
-}).catch((e) => {
+}).catch(function (e) {
     console.log(e);
-});;
+});
+;
