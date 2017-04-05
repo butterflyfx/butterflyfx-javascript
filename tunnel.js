@@ -1,5 +1,5 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var child_process_1 = require("child_process");
 var os = require("os");
 var path = require("path");
@@ -26,6 +26,13 @@ function getTunnelClientFilename() {
 exports.getTunnelClientFilename = getTunnelClientFilename;
 function tunnel(options) {
     var prog = path.join(__dirname, getTunnelClientFilename());
-    return child_process_1.spawn(prog, ["--project=" + options.projectId, "--api-key=\"" + options.apiKey]);
+    var address = options.address || "localhost:80";
+    var child = child_process_1.spawn(prog, ["--project=" + options.projectId, "--api-key=\"" + options.apiKey + "\"", "tunnel", address], { detached: false });
+    process.on('exit', function () {
+        child.kill();
+    });
+    return child;
 }
 exports.tunnel = tunnel;
+process.on('SIGINT', function () { return process.exit(); }); // catch ctrl-c
+process.on('SIGTERM', function () { return process.exit(); }); // catch kill

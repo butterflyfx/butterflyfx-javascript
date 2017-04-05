@@ -8,6 +8,7 @@ let DOWNLOAD_PATH;
 interface TunnelOptions {
     projectId: number,
     apiKey: string,
+    address: string
 }
 
 export function getTunnelClientFilename(): string {
@@ -28,5 +29,13 @@ export function getTunnelClientFilename(): string {
 
 export function tunnel(options: TunnelOptions): ChildProcess {
     let prog = path.join(__dirname, getTunnelClientFilename());
-    return spawn(prog, [`--project=${options.projectId}`, `--api-key="${options.apiKey}`]);
+    let address = options.address || "localhost:80";
+    let child = spawn(prog, [`--project=${options.projectId}`, `--api-key="${options.apiKey}"`, "tunnel", address], { detached: false });
+    process.on('exit', function () {
+        child.kill();
+    });
+    return child;
 }
+
+process.on('SIGINT', () => process.exit()); // catch ctrl-c
+process.on('SIGTERM', () => process.exit()); // catch kill
