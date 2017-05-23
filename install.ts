@@ -5,7 +5,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
 
-var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/file/butterflyfx-downloads/tunnelclient/"
+var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/downloads/tunnelclient/"
 
 function getDownloadUrl(): string {
     return DOWNLOAD_URL_ROOT + getTunnelClientFilename();

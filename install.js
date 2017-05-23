@@ -1,16 +1,16 @@
 "use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
+exports.__esModule = true;
 var tunnel_1 = require("./tunnel");
 var https = require("https");
 var yaku_1 = require("yaku");
 var fs = require("fs");
 var path = require("path");
-var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/file/butterflyfx-downloads/tunnelclient/";
+var DOWNLOAD_URL_ROOT = "https://cdn.butterflyfx.io/downloads/tunnelclient/";
 function getDownloadUrl() {
     return DOWNLOAD_URL_ROOT + tunnel_1.getTunnelClientFilename();
 }
 function download(url, dest) {
-    return new yaku_1.default(function (resolve, reject) {
+    return new yaku_1["default"](function (resolve, reject) {
         var file = fs.createWriteStream(dest);
         var request = https.get(url, function (response) {
             response.pipe(file);
@@ -32,7 +32,7 @@ var destination = path.join(__dirname, filename);
 console.log("Downloading...");
 download(url, destination).then(function () {
     console.log("Success!");
-}).catch(function (e) {
+})["catch"](function (e) {
     console.log(e);
 });
 ;
