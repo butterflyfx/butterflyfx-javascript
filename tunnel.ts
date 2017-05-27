@@ -28,6 +28,10 @@ export function getTunnelClientFilename(): string {
 }
 
 export function tunnel(options: TunnelOptions): ChildProcess {
+    if (process.browser) {
+        console.error("Tunneling not supported in browser");
+        return;
+    }
     let prog = path.join(__dirname, getTunnelClientFilename());
     let address = options.address || "localhost:80";
     let child = spawn(prog, [`--project=${options.projectId}`, `--api-key="${options.apiKey}"`, "tunnel", address], { detached: false });

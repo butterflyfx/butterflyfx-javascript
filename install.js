@@ -1,5 +1,5 @@
 "use strict";
-exports.__esModule = true;
+Object.defineProperty(exports, "__esModule", { value: true });
 var tunnel_1 = require("./tunnel");
 var https = require("https");
 var yaku_1 = require("yaku");
@@ -10,7 +10,7 @@ function getDownloadUrl() {
     return DOWNLOAD_URL_ROOT + tunnel_1.getTunnelClientFilename();
 }
 function download(url, dest) {
-    return new yaku_1["default"](function (resolve, reject) {
+    return new yaku_1.default(function (resolve, reject) {
         var file = fs.createWriteStream(dest);
         var request = https.get(url, function (response) {
             response.pipe(file);
@@ -32,7 +32,7 @@ var destination = path.join(__dirname, filename);
 console.log("Downloading...");
 download(url, destination).then(function () {
     console.log("Success!");
-})["catch"](function (e) {
+}).catch(function (e) {
     console.log(e);
 });
 ;
