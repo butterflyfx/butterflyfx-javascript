@@ -4,6 +4,7 @@ var child_process_1 = require("child_process");
 var os = require("os");
 var path = require("path");
 var DOWNLOAD_PATH;
+var IS_RUNNING_IN_BROWSER = process.hasOwnProperty('browser');
 function getTunnelClientFilename() {
     var platform = os.platform();
     var arch = os.arch();
@@ -25,7 +26,7 @@ function getTunnelClientFilename() {
 }
 exports.getTunnelClientFilename = getTunnelClientFilename;
 function tunnel(options) {
-    if (process.browser) {
+    if (IS_RUNNING_IN_BROWSER) {
         console.error("Tunneling not supported in browser");
         return;
     }

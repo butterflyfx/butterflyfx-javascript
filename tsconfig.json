@@ -12,7 +12,8 @@
     },
     "files": [
         "index.ts",
-        "install.ts"
+        "install.ts",
+        "browser.ts"
     ],
     "exclude": [
         "node_modules"

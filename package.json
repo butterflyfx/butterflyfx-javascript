@@ -30,6 +30,7 @@
     "vinyl-source-stream": "^1.1.0",
     "watchify": "^3.8.0"
   },
+  "es6": true,
   "dependencies": {
     "@types/isomorphic-fetch": "^0.0.34",
     "@types/node": "^7.0.12",
@@ -40,6 +41,7 @@
     "unique-selector": "^0.3.5",
     "yaku": "^0.17.9"
   },
+  "browser": "./browser.js",
   "browserify": {
     "transform": [
       "babelify"

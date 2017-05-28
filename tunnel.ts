@@ -5,7 +5,9 @@ import * as path from 'path';
 
 let DOWNLOAD_PATH;
 
-interface TunnelOptions {
+const IS_RUNNING_IN_BROWSER = process.hasOwnProperty('browser');
+
+export interface TunnelOptions {
     projectId: number,
     apiKey: string,
     address: string
@@ -28,7 +30,7 @@ export function getTunnelClientFilename(): string {
 }
 
 export function tunnel(options: TunnelOptions): ChildProcess {
-    if (process.browser) {
+    if (IS_RUNNING_IN_BROWSER) {
         console.error("Tunneling not supported in browser");
         return;
     }
