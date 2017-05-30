@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var tunnel_1 = require("./tunnel");
 var fixture_1 = require("./api/fixture");
+var urlify_1 = require("./lib/urlify");
 var api_resource_1 = require("./api/api-resource");
 var WEB_HOST = "https://www.butterflyfx.io";
 var ButterflyFXClient = (function () {
@@ -34,6 +35,9 @@ var ButterflyFXClient = (function () {
         // Check if we're supplied data vs an actual fixture object
         if (!(fixture && fixture.revision && fixture.revision.html)) {
             fixture = this.generateFixture(fixture);
+        }
+        if (!fixture.slug) {
+            fixture.slug = urlify_1.default(fixture.name, 100);
         }
         return fixture_1.default.save(fixture);
     };
