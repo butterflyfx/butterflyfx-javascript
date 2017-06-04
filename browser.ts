@@ -3,6 +3,8 @@ import WindowMessageHandler from './window-message-handler';
 import { u } from 'umbrellajs';
 import unique from 'unique-selector';
 import * as picomodal from 'picomodal';
+import Promise from 'yaku';
+
 interface Window { BUTTERFLYFX_API_HOST: string; }
 
 let WEB_HOST = window['BUTTERFLYFX_API_HOST'] || "https://www.butterflyfx.io";
@@ -15,6 +17,10 @@ interface CrossPlatformStyleElement extends HTMLStyleElement {
     styleSheet;
 }
 
+// To add to window
+if (!window['Promise']) {
+    window['Promise'] = Promise;
+}
 
 function generateStyleSheet(ruleset) {
     var style = <CrossPlatformStyleElement>document.createElement('style');
@@ -47,6 +53,7 @@ function generateStyleSheet(ruleset) {
 export default class ButterflyFX extends BaseClient {
     private _stylesheet;
     private messageHandler;
+    private lastSelectedElement: HTMLElement;
 
 
     project: number;
@@ -79,9 +86,26 @@ export default class ButterflyFX extends BaseClient {
         let body = u(document.body.parentElement);
         body.addClass(className);
         let highlightSelectedFixture = (e) => {
+            let clearClasses = (el) => {
+                el.removeClass('active');
+                el.removeClass('selected');
+                let parent = e.target.parentElement;
+                while (parent) {
+                    u(parent).removeClass('active');
+                    parent = parent.parentElement
+                }
+            };
+            clearClasses(u('.active.selected'));
             let element;
-            if (e.target === document.body.parentElement) {
+            if (!e.ctrlKey) {
                 element = u(document.body);
+            }
+            else if (e.target === document.body.parentElement) {
+                element = u(document.body);
+            }
+            else if (e.type === "keydown") {
+                let hoveredElements = document.querySelectorAll(":hover");
+                element = u(hoveredElements[hoveredElements.length - 1]);
             }
             else {
                 element = u(e.target);
@@ -95,20 +119,16 @@ export default class ButterflyFX extends BaseClient {
             element.addClass('active');
             element.addClass('selected');
             element.on('mouseout', () => {
-                element.removeClass('active');
-                element.removeClass('selected');
-                let parent = e.target.parentElement;
-                while (parent) {
-                    u(parent).removeClass('active');
-                    parent = parent.parentElement
-                }
+                clearClasses(element);
             })
+            this.lastSelectedElement = element.first();
         };
-        return new Promise(function (resolve, reject) {
+        return new Promise((resolve, reject) => {
             let showFixtureDialog = (e) => {
                 e.preventDefault();
                 body.removeClass(className);
                 body.off('mouseover', highlightSelectedFixture);
+                body.off('keydown', highlightSelectedFixture);
                 body.off('click', showFixtureDialog);
                 body.off('contextmenu', showFixtureDialog);
                 let element = u(e.target);
@@ -116,7 +136,7 @@ export default class ButterflyFX extends BaseClient {
                 if (e.type == "contextmenu") {
                     resolve(null);
                 }
-                else if (e.target !== document.body && e.target !== document.body.parentElement) {
+                else if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
                     let selector = unique(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }
@@ -125,6 +145,7 @@ export default class ButterflyFX extends BaseClient {
                 }
             }
             body.on('mouseover', highlightSelectedFixture);
+            body.on('keydown', highlightSelectedFixture);
             body.on('click', showFixtureDialog);
             body.on('contextmenu', showFixtureDialog);
         });

@@ -49,6 +49,10 @@ export default class Fixture extends APIResource implements FixtureInterface {
         return instance.slug;
     }
 
+    static _sha1(str): string {
+        return sha1(str);
+    }
+
     static generateRevision({ html = null, path = null } = {}) {
         let revision = <FixtureRevision>{};
         if (!html) {
@@ -77,9 +81,9 @@ export default class Fixture extends APIResource implements FixtureInterface {
             body.style.width = '';
         }
         revision.html = html;
-        revision.path = path || window.location.pathname;
-        revision.hashkey = sha1(html);
-        revision.origin = window.location.origin;
+        revision.path = path || (global['location'] ? window.location.pathname : "/");
+        revision.hashkey = Fixture._sha1(html);
+        revision.origin = global['location'] ? window.location.origin : "";
         return revision;
     }
 

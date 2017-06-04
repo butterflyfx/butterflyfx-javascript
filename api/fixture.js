@@ -46,6 +46,9 @@ var Fixture = (function (_super) {
     Fixture.pk = function (instance) {
         return instance.slug;
     };
+    Fixture._sha1 = function (str) {
+        return sha1_1.default(str);
+    };
     Fixture.generateRevision = function (_a) {
         var _b = _a === void 0 ? {} : _a, _c = _b.html, html = _c === void 0 ? null : _c, _d = _b.path, path = _d === void 0 ? null : _d;
         var revision = {};
@@ -75,9 +78,9 @@ var Fixture = (function (_super) {
             body.style.width = '';
         }
         revision.html = html;
-        revision.path = path || window.location.pathname;
-        revision.hashkey = sha1_1.default(html);
-        revision.origin = window.location.origin;
+        revision.path = path || (global['location'] ? window.location.pathname : "/");
+        revision.hashkey = Fixture._sha1(html);
+        revision.origin = global['location'] ? window.location.origin : "";
         return revision;
     };
     Fixture.prototype.generateRevision = function (_a) {

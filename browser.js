@@ -15,7 +15,12 @@ var window_message_handler_1 = require("./window-message-handler");
 var umbrellajs_1 = require("umbrellajs");
 var unique_selector_1 = require("unique-selector");
 var picomodal = require("picomodal");
+var yaku_1 = require("yaku");
 var WEB_HOST = window['BUTTERFLYFX_API_HOST'] || "https://www.butterflyfx.io";
+// To add to window
+if (!window['Promise']) {
+    window['Promise'] = yaku_1.default;
+}
 function generateStyleSheet(ruleset) {
     var style = document.createElement('style');
     style.type = 'text/css';
@@ -65,14 +70,32 @@ var ButterflyFX = (function (_super) {
         console.error("Tunneling not available through browser");
     };
     ButterflyFX.prototype.selectFixtureElement = function () {
+        var _this = this;
         this.generateStyleSheet();
         var className = "butterflyfx-fixture-selector";
         var body = umbrellajs_1.u(document.body.parentElement);
         body.addClass(className);
         var highlightSelectedFixture = function (e) {
+            var clearClasses = function (el) {
+                el.removeClass('active');
+                el.removeClass('selected');
+                var parent = e.target.parentElement;
+                while (parent) {
+                    umbrellajs_1.u(parent).removeClass('active');
+                    parent = parent.parentElement;
+                }
+            };
+            clearClasses(umbrellajs_1.u('.active.selected'));
             var element;
-            if (e.target === document.body.parentElement) {
+            if (!e.ctrlKey) {
                 element = umbrellajs_1.u(document.body);
+            }
+            else if (e.target === document.body.parentElement) {
+                element = umbrellajs_1.u(document.body);
+            }
+            else if (e.type === "keydown") {
+                var hoveredElements = document.querySelectorAll(":hover");
+                element = umbrellajs_1.u(hoveredElements[hoveredElements.length - 1]);
             }
             else {
                 element = umbrellajs_1.u(e.target);
@@ -86,20 +109,16 @@ var ButterflyFX = (function (_super) {
             element.addClass('active');
             element.addClass('selected');
             element.on('mouseout', function () {
-                element.removeClass('active');
-                element.removeClass('selected');
-                var parent = e.target.parentElement;
-                while (parent) {
-                    umbrellajs_1.u(parent).removeClass('active');
-                    parent = parent.parentElement;
-                }
+                clearClasses(element);
             });
+            _this.lastSelectedElement = element.first();
         };
-        return new Promise(function (resolve, reject) {
+        return new yaku_1.default(function (resolve, reject) {
             var showFixtureDialog = function (e) {
                 e.preventDefault();
                 body.removeClass(className);
                 body.off('mouseover', highlightSelectedFixture);
+                body.off('keydown', highlightSelectedFixture);
                 body.off('click', showFixtureDialog);
                 body.off('contextmenu', showFixtureDialog);
                 var element = umbrellajs_1.u(e.target);
@@ -107,7 +126,7 @@ var ButterflyFX = (function (_super) {
                 if (e.type == "contextmenu") {
                     resolve(null);
                 }
-                else if (e.target !== document.body && e.target !== document.body.parentElement) {
+                else if (_this.lastSelectedElement !== document.body && _this.lastSelectedElement !== document.body.parentElement) {
                     var selector = unique_selector_1.default(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }
@@ -116,6 +135,7 @@ var ButterflyFX = (function (_super) {
                 }
             };
             body.on('mouseover', highlightSelectedFixture);
+            body.on('keydown', highlightSelectedFixture);
             body.on('click', showFixtureDialog);
             body.on('contextmenu', showFixtureDialog);
         });

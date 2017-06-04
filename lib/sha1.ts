@@ -1,4 +1,4 @@
-let crypto = require('crypto');
+let crypto;
 
 export default function sha1(str) {
   // If we are in node, just use crypto library

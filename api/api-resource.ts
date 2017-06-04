@@ -1,5 +1,3 @@
-// Load XSRF-TOKEN from cookie so it can be used in POST requests.
-require('es6-promise').polyfill();
 let ACCESS_TOKEN = null;
 let HTTP_NO_CONTENT = 204;
 require('isomorphic-fetch');
@@ -12,7 +10,7 @@ if (process.env.NODE_ENV === "development") {
     }
 }
 else {
-    API_HOST = "https://www.butterflyfx.io/api/";
+    API_HOST = global["BUTTERFLYFX_HOST"] || "https://www.butterflyfx.io/api/";
 }
 function getCookie(name) {
     var cookieValue = null;
