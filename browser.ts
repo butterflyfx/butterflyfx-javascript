@@ -62,7 +62,7 @@ export default class ButterflyFX extends BaseClient {
         this._stylesheet = generateStyleSheet({
             ".butterflyfx-fixture-selector > *": "opacity: 0.25;",
             ".butterflyfx-fixture-selector .active": "opacity: 1",
-            ".butterflyfx-fixture-selector .active.selected": "border: 1px solid red !important;",
+            ".butterflyfx-fixture-selector .active.selected": "border: 3px solid red !important;",
             ".butterflyfx-fixture-selector .active ~ *, .butterflyfx-fixture-selector .active > *:not(.active)": "opacity: 0.25"
         });
         this._stylesheet.id = "butterflyfx-fixture-stylesheet";
