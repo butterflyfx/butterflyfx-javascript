@@ -1,6 +1,7 @@
 import { tunnel, TunnelOptions } from './tunnel';
 import * as api from './api';
 import Fixture from './api/fixture';
+import Build from './api/build';
 import urlify from './lib/urlify';
 import { API_HOST, APIResource } from './api/api-resource';
 
@@ -30,10 +31,14 @@ export default class ButterflyFXClient {
         tunnel(options);
     }
 
+    build(projectId = this.project) {
+        return Build.save({ project: projectId });
+    }
+
 
     generateFixture(data = {}) {
         let fixture = new Fixture(data);
-        if (this.project) {
+        if (this.project !== null) {
             fixture.project = this.project;
         }
         fixture.generateRevision(data);

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 var tunnel_1 = require("./tunnel");
 var fixture_1 = require("./api/fixture");
+var build_1 = require("./api/build");
 var urlify_1 = require("./lib/urlify");
 var api_resource_1 = require("./api/api-resource");
 var WEB_HOST = "https://www.butterflyfx.io";
@@ -22,10 +23,14 @@ var ButterflyFXClient = (function () {
         };
         tunnel_1.tunnel(options);
     };
+    ButterflyFXClient.prototype.build = function (projectId) {
+        if (projectId === void 0) { projectId = this.project; }
+        return build_1.default.save({ project: projectId });
+    };
     ButterflyFXClient.prototype.generateFixture = function (data) {
         if (data === void 0) { data = {}; }
         var fixture = new fixture_1.default(data);
-        if (this.project) {
+        if (this.project !== null) {
             fixture.project = this.project;
         }
         fixture.generateRevision(data);
