@@ -123,10 +123,7 @@ var ButterflyFX = (function (_super) {
                 body.off('contextmenu', showFixtureDialog);
                 var element = umbrellajs_1.u(e.target);
                 element.trigger('mouseout');
-                if (e.type == "contextmenu") {
-                    resolve(null);
-                }
-                else if (_this.lastSelectedElement !== document.body && _this.lastSelectedElement !== document.body.parentElement) {
+                if (_this.lastSelectedElement !== document.body && _this.lastSelectedElement !== document.body.parentElement) {
                     var selector = unique_selector_1.default(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }

@@ -133,10 +133,7 @@ export default class ButterflyFX extends BaseClient {
                 body.off('contextmenu', showFixtureDialog);
                 let element = u(e.target);
                 element.trigger('mouseout');
-                if (e.type == "contextmenu") {
-                    resolve(null);
-                }
-                else if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
+                if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
                     let selector = unique(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }
