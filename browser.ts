@@ -5,9 +5,7 @@ import unique from 'unique-selector';
 import * as picomodal from 'picomodal';
 import Promise from 'yaku';
 
-interface Window { BUTTERFLYFX_API_HOST: string; }
-
-let WEB_HOST = window['BUTTERFLYFX_API_HOST'] || "https://www.butterflyfx.io";
+let WEB_HOST = window['BUTTERFLYFX_WEB_HOST'] || "https://www.butterflyfx.io";
 
 interface CrossPlatformStyleSheet extends StyleSheet {
     insertRule;

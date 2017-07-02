@@ -16,7 +16,7 @@ var umbrellajs_1 = require("umbrellajs");
 var unique_selector_1 = require("unique-selector");
 var picomodal = require("picomodal");
 var yaku_1 = require("yaku");
-var WEB_HOST = window['BUTTERFLYFX_API_HOST'] || "https://www.butterflyfx.io";
+var WEB_HOST = window['BUTTERFLYFX_WEB_HOST'] || "https://www.butterflyfx.io";
 // To add to window
 if (!window['Promise']) {
     window['Promise'] = yaku_1.default;
