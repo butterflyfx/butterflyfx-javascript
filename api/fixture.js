@@ -26,6 +26,48 @@ var hashCode = function (aString) {
     return hash;
 };
 var config = { resolution: { height: 900, width: 1440 } };
+var CSS_URL_REGEX = /url(?:\(['"]?)(.*?)(?:['"]?\))/gi;
+function getRulesFromStyleSheet(sheet) {
+    if (!(sheet && sheet.cssRules)) {
+        return;
+    }
+    var rules = [];
+    for (var i = 0; i < sheet.cssRules.length; i++) {
+        var rule = sheet.cssRules[i];
+        if (rule.type === CSSRule.IMPORT_RULE) {
+            var cssImport = rule;
+            rules = rules.concat(getRulesFromStyleSheet(cssImport.styleSheet));
+        }
+        else {
+            var cssText = rule.cssText;
+            if (cssText.indexOf('url') !== -1 && cssText.indexOf('http') === -1) {
+                var urlParts = rule.parentStyleSheet.href.split("/");
+                urlParts.pop();
+                var baseUrl = urlParts.join("/");
+                var matches = CSS_URL_REGEX.exec(rule.cssText);
+                while (matches !== null) {
+                    var absoluteUrl = baseUrl + "/" + matches[1];
+                    cssText = cssText.replace(matches[1], absoluteUrl);
+                    matches = CSS_URL_REGEX.exec(rule.cssText);
+                }
+            }
+            rules.push(cssText);
+        }
+    }
+    return rules;
+}
+function getRulesFromPageStyles(body) {
+    if (body === void 0) { body = window.document.body; }
+    var styles = body.parentElement.querySelectorAll("[type='text/css'], [rel=stylesheet]");
+    var rules = [];
+    for (var i in styles) {
+        var sheet = styles[i].sheet;
+        if (sheet) {
+            rules = rules.concat(getRulesFromStyleSheet(sheet));
+        }
+    }
+    return rules;
+}
 var Fixture = (function (_super) {
     __extends(Fixture, _super);
     function Fixture(data) {
@@ -76,6 +118,7 @@ var Fixture = (function (_super) {
             html = new XMLSerializer().serializeToString(document);
             body.style.height = '';
             body.style.width = '';
+            revision.rules = JSON.stringify(getRulesFromPageStyles(body));
         }
         revision.html = html;
         revision.path = path || (global['location'] ? window.location.pathname : "/");
