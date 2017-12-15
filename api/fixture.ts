@@ -21,58 +21,12 @@ export interface FixtureRevision {
     path: string;
     hashkey: string;
     origin: string;
-    rules: string;
 }
 
 export interface FixtureInterface {
     revision: FixtureRevision;
     slug: string;
     project: number;
-}
-
-const CSS_URL_REGEX = /url(?:\(['"]?)(.*?)(?:['"]?\))/gi;
-
-function getRulesFromStyleSheet(sheet: CSSStyleSheet): string[] {
-    if (!(sheet && sheet.cssRules)) {
-        return;
-    }
-    let rules = [];
-    for (let i = 0; i < sheet.cssRules.length; i++) {
-        let rule = sheet.cssRules[i];
-        if (rule.type === CSSRule.IMPORT_RULE) {
-            let cssImport = <CSSImportRule>rule;
-            rules = rules.concat(getRulesFromStyleSheet(cssImport.styleSheet));
-        }
-        else {
-            let cssText = rule.cssText;
-            if (cssText.indexOf('url') !== -1 && cssText.indexOf('http') === -1) {
-                let urlParts = rule.parentStyleSheet.href.split("/");
-                urlParts.pop();
-                let baseUrl = urlParts.join("/");
-                let matches = CSS_URL_REGEX.exec(rule.cssText);
-                while (matches !== null) {
-                    let absoluteUrl = `${baseUrl}/${matches[1]}`;
-                    cssText = cssText.replace(matches[1], absoluteUrl);
-                    matches = CSS_URL_REGEX.exec(rule.cssText);
-                }
-            }
-            rules.push(cssText);
-        }
-    }
-    return rules;
-
-}
-
-function getRulesFromPageStyles(body = window.document.body) {
-    let styles = <NodeListOf<HTMLStyleElement>>body.parentElement.querySelectorAll("[type='text/css'], [rel=stylesheet]");
-    let rules = [];
-    for (let i in styles) {
-        let sheet = <CSSStyleSheet>styles[i].sheet;
-        if (sheet) {
-            rules = rules.concat(getRulesFromStyleSheet(sheet));
-        }
-    }
-    return rules;
 }
 
 export default class Fixture extends APIResource implements FixtureInterface {
@@ -125,7 +79,6 @@ export default class Fixture extends APIResource implements FixtureInterface {
             html = new XMLSerializer().serializeToString(document);
             body.style.height = '';
             body.style.width = '';
-            revision.rules = JSON.stringify(getRulesFromPageStyles(body));
         }
         revision.html = html;
         revision.path = path || (global['location'] ? window.location.pathname : "/");
@@ -142,7 +95,7 @@ export default class Fixture extends APIResource implements FixtureInterface {
 
     static list(projectId): Promise<any[]> {
         projectId = projectId || "all";
-        return <Promise<any[]>>this.getJSON(`${API_HOST}${this._basePath}/${projectId}`);
+        return this.getJSON(`${API_HOST}${this._basePath}/${projectId}`);
     }
 
     get project() {
