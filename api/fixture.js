@@ -26,7 +26,7 @@ var hashCode = function (aString) {
     return hash;
 };
 var config = { resolution: { height: 900, width: 1440 } };
-var Fixture = (function (_super) {
+var Fixture = /** @class */ (function (_super) {
     __extends(Fixture, _super);
     function Fixture(data) {
         return _super.call(this, data) || this;

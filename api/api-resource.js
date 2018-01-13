@@ -42,7 +42,7 @@ function getDefaultHeaders() {
     }
     return headers;
 }
-var APIResource = (function () {
+var APIResource = /** @class */ (function () {
     function APIResource(data) {
         data = data || {};
         this.setDataObject(data);

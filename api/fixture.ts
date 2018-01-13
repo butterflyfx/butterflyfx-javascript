@@ -21,6 +21,7 @@ export interface FixtureRevision {
     path: string;
     hashkey: string;
     origin: string;
+    rules: string;
 }
 
 export interface FixtureInterface {
@@ -34,6 +35,7 @@ export default class Fixture extends APIResource implements FixtureInterface {
     revision: FixtureRevision;
     slug: string;
     selector: string;
+    recording: any[];
 
     static get _basePath() { return "fixtures"; }
 

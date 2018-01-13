@@ -6,7 +6,7 @@ var build_1 = require("./api/build");
 var urlify_1 = require("./lib/urlify");
 var api_resource_1 = require("./api/api-resource");
 var WEB_HOST = "https://www.butterflyfx.io";
-var ButterflyFXClient = (function () {
+var ButterflyFXClient = /** @class */ (function () {
     function ButterflyFXClient(_a) {
         var _b = _a === void 0 ? {} : _a, _c = _b.project, project = _c === void 0 ? null : _c, _d = _b.token, token = _d === void 0 ? null : _d;
         this.project = project;

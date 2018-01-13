@@ -15,12 +15,10 @@ var window_message_handler_1 = require("./window-message-handler");
 var umbrellajs_1 = require("umbrellajs");
 var unique_selector_1 = require("unique-selector");
 var picomodal = require("picomodal");
+var recorder_1 = require("./recorder");
 var yaku_1 = require("yaku");
+global.Promise = yaku_1.default;
 var WEB_HOST = window['BUTTERFLYFX_WEB_HOST'] || "https://www.butterflyfx.io";
-// To add to window
-if (!window['Promise']) {
-    window['Promise'] = yaku_1.default;
-}
 function generateStyleSheet(ruleset) {
     var style = document.createElement('style');
     style.type = 'text/css';
@@ -46,7 +44,8 @@ function generateStyleSheet(ruleset) {
     });
     return style;
 }
-var ButterflyFX = (function (_super) {
+var SELECTOR_RECORDING = "SELECTOR_RECORDING";
+var ButterflyFX = /** @class */ (function (_super) {
     __extends(ButterflyFX, _super);
     function ButterflyFX() {
         return _super !== null && _super.apply(this, arguments) || this;
@@ -113,7 +112,7 @@ var ButterflyFX = (function (_super) {
             });
             _this.lastSelectedElement = element.first();
         };
-        return new yaku_1.default(function (resolve, reject) {
+        return new Promise(function (resolve, reject) {
             var showFixtureDialog = function (e) {
                 e.preventDefault();
                 body.removeClass(className);
@@ -123,7 +122,10 @@ var ButterflyFX = (function (_super) {
                 body.off('contextmenu', showFixtureDialog);
                 var element = umbrellajs_1.u(e.target);
                 element.trigger('mouseout');
-                if (_this.lastSelectedElement !== document.body && _this.lastSelectedElement !== document.body.parentElement) {
+                if (e.type === "contextmenu") {
+                    resolve(SELECTOR_RECORDING);
+                }
+                else if (_this.lastSelectedElement !== document.body && _this.lastSelectedElement !== document.body.parentElement) {
                     var selector = unique_selector_1.default(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }
@@ -141,29 +143,40 @@ var ButterflyFX = (function (_super) {
         var _this = this;
         var fixture = this.generateFixture();
         this.selectFixtureElement().then(function (selector) {
-            if (selector) {
+            var promise = Promise.resolve([]);
+            ;
+            if (selector === SELECTOR_RECORDING) {
+                var recording = new recorder_1.PageRecorder();
+                promise = recording.startRecording();
+            }
+            else if (selector) {
                 fixture.selector = selector;
             }
-            var modal = picomodal({
-                'content': "<iframe id=\"bfx-frame\" style=\"height: 50vh; min-height: 400px; width: 100%; border: none\" src=\"" + WEB_HOST + "/dash/bookmarklet\"></iframe>",
-                'width': '50vw',
-                'height': '50vh',
-            }).afterClose(function (modal) { modal.destroy(); }).show();
-            var element = document.querySelector('#bfx-frame');
-            _this.messageHandler = new window_message_handler_1.default(element.contentWindow, null, null);
-            _this.messageHandler.addActionHandler('onPageLoad', function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
+            promise.then(function (history) {
+                if (history.length > 0) {
+                    fixture.revision.rules = JSON.stringify(history);
                 }
-                _this.messageHandler.sendMessage("setFixture", fixture);
-            });
-            _this.messageHandler.addActionHandler('onPageClose', function () {
-                var args = [];
-                for (var _i = 0; _i < arguments.length; _i++) {
-                    args[_i] = arguments[_i];
-                }
-                modal.close();
+                var modal = picomodal({
+                    'content': "<iframe id=\"bfx-frame\" style=\"height: 50vh; min-height: 400px; width: 100%; border: none\" src=\"" + WEB_HOST + "/dash/bookmarklet\"></iframe>",
+                    'width': '50vw',
+                    'height': '50vh',
+                }).afterClose(function (modal) { modal.destroy(); }).show();
+                var element = document.querySelector('#bfx-frame');
+                _this.messageHandler = new window_message_handler_1.default(element.contentWindow, null, null);
+                _this.messageHandler.addActionHandler('onPageLoad', function () {
+                    var args = [];
+                    for (var _i = 0; _i < arguments.length; _i++) {
+                        args[_i] = arguments[_i];
+                    }
+                    _this.messageHandler.sendMessage("setFixture", fixture);
+                });
+                _this.messageHandler.addActionHandler('onPageClose', function () {
+                    var args = [];
+                    for (var _i = 0; _i < arguments.length; _i++) {
+                        args[_i] = arguments[_i];
+                    }
+                    modal.close();
+                });
             });
         });
     };

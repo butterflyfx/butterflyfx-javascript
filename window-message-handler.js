@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var WindowMessageHandler = (function () {
+var WindowMessageHandler = /** @class */ (function () {
     function WindowMessageHandler(target, targetOrigin, source) {
         var _this = this;
         this.target = target || window;

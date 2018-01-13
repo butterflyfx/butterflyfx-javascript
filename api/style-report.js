@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var api_resource_1 = require("./api-resource");
-var StyleReport = (function (_super) {
+var StyleReport = /** @class */ (function (_super) {
     __extends(StyleReport, _super);
     function StyleReport(data) {
         var _this = _super.call(this, data) || this;

@@ -98,7 +98,7 @@ export class APIResource {
     }
 
 
-    static getJSON(url) {
+    static getJSON(url): Promise<any> {
         const headers = getDefaultHeaders();
         return new Promise(function (resolve, reject) {
             try {

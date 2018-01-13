@@ -3,7 +3,12 @@ import WindowMessageHandler from './window-message-handler';
 import { u } from 'umbrellajs';
 import unique from 'unique-selector';
 import * as picomodal from 'picomodal';
-import Promise from 'yaku';
+import { PageRecorder, RecordingHistory } from './recorder';
+
+import YakuPromise from 'yaku';
+global.Promise = YakuPromise;
+
+import Fixture from './api/fixture';
 
 let WEB_HOST = window['BUTTERFLYFX_WEB_HOST'] || "https://www.butterflyfx.io";
 
@@ -13,11 +18,6 @@ interface CrossPlatformStyleSheet extends StyleSheet {
 
 interface CrossPlatformStyleElement extends HTMLStyleElement {
     styleSheet;
-}
-
-// To add to window
-if (!window['Promise']) {
-    window['Promise'] = Promise;
 }
 
 function generateStyleSheet(ruleset) {
@@ -47,6 +47,7 @@ function generateStyleSheet(ruleset) {
     return style;
 }
 
+const SELECTOR_RECORDING = "SELECTOR_RECORDING";
 
 export default class ButterflyFX extends BaseClient {
     private _stylesheet;
@@ -131,7 +132,10 @@ export default class ButterflyFX extends BaseClient {
                 body.off('contextmenu', showFixtureDialog);
                 let element = u(e.target);
                 element.trigger('mouseout');
-                if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
+                if (e.type === "contextmenu") {
+                    resolve(SELECTOR_RECORDING);
+                }
+                else if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
                     let selector = unique(e.target).replace("html > body > ", "");
                     resolve(selector);
                 }
@@ -149,22 +153,32 @@ export default class ButterflyFX extends BaseClient {
     showFixtureDialog() {
         let fixture = this.generateFixture();
         this.selectFixtureElement().then((selector) => {
-            if (selector) {
+            let promise: Promise<RecordingHistory[]> = Promise.resolve([]);;
+            if (selector === SELECTOR_RECORDING) {
+                let recording = new PageRecorder();
+                promise = recording.startRecording();
+            }
+            else if (selector) {
                 fixture.selector = selector;
             }
-            let modal = picomodal({
-                'content': `<iframe id="bfx-frame" style="height: 50vh; min-height: 400px; width: 100%; border: none" src="${WEB_HOST}/dash/bookmarklet"></iframe>`,
-                'width': '50vw',
-                'height': '50vh',
-            }).afterClose(function (modal) { modal.destroy(); }).show();
-            let element = <HTMLFrameElement>document.querySelector('#bfx-frame');
-            this.messageHandler = new WindowMessageHandler(element.contentWindow, null, null);
-            this.messageHandler.addActionHandler('onPageLoad', (...args) => {
-                this.messageHandler.sendMessage("setFixture", fixture)
-            });
-            this.messageHandler.addActionHandler('onPageClose', (...args) => {
-                modal.close();
-            });
+            promise.then((history) => {
+                if (history.length > 0) {
+                    fixture.revision.rules = JSON.stringify(history);
+                }
+                let modal = picomodal({
+                    'content': `<iframe id="bfx-frame" style="height: 50vh; min-height: 400px; width: 100%; border: none" src="${WEB_HOST}/dash/bookmarklet"></iframe>`,
+                    'width': '50vw',
+                    'height': '50vh',
+                }).afterClose(function (modal) { modal.destroy(); }).show();
+                let element = <HTMLFrameElement>document.querySelector('#bfx-frame');
+                this.messageHandler = new WindowMessageHandler(element.contentWindow, null, null);
+                this.messageHandler.addActionHandler('onPageLoad', (...args) => {
+                    this.messageHandler.sendMessage("setFixture", fixture)
+                });
+                this.messageHandler.addActionHandler('onPageClose', (...args) => {
+                    modal.close();
+                });
+            })
         })
     }
 }

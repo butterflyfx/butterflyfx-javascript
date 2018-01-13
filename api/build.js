@@ -11,7 +11,7 @@ var __extends = (this && this.__extends) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 var api_resource_1 = require("./api-resource");
-var Build = (function (_super) {
+var Build = /** @class */ (function (_super) {
     __extends(Build, _super);
     function Build(data) {
         var _this = _super.call(this, data) || this;
