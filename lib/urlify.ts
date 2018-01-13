@@ -1,3 +1,4 @@
+// Port of urlify.js from django project
 const LATIN_MAP = {
     'À': 'A', 'Á': 'A', 'Â': 'A', 'Ã': 'A', 'Ä': 'A', 'Å': 'A', 'Æ': 'AE',
     'Ç': 'C', 'È': 'E', 'É': 'E', 'Ê': 'E', 'Ë': 'E', 'Ì': 'I', 'Í': 'I',
@@ -88,7 +89,15 @@ const AZERBAIJANI_MAP = {
     'Ç': 'C', 'Ə': 'E', 'Ğ': 'G', 'İ': 'I', 'Ö': 'O', 'Ş': 'S', 'Ü': 'U'
 };
 
-var ALL_DOWNCODE_MAPS = [
+const GEORGIAN_MAP = {
+    'ა': 'a', 'ბ': 'b', 'გ': 'g', 'დ': 'd', 'ე': 'e', 'ვ': 'v', 'ზ': 'z',
+    'თ': 't', 'ი': 'i', 'კ': 'k', 'ლ': 'l', 'მ': 'm', 'ნ': 'n', 'ო': 'o',
+    'პ': 'p', 'ჟ': 'j', 'რ': 'r', 'ს': 's', 'ტ': 't', 'უ': 'u', 'ფ': 'f',
+    'ქ': 'q', 'ღ': 'g', 'ყ': 'y', 'შ': 'sh', 'ჩ': 'ch', 'ც': 'c', 'ძ': 'dz',
+    'წ': 'w', 'ჭ': 'ch', 'ხ': 'x', 'ჯ': 'j', 'ჰ': 'h'
+};
+
+const DOWNCODE_MAP = Object.assign({},
     LATIN_MAP,
     LATIN_SYMBOLS_MAP,
     GREEK_MAP,
@@ -102,37 +111,15 @@ var ALL_DOWNCODE_MAPS = [
     ARABIC_MAP,
     LITHUANIAN_MAP,
     SERBIAN_MAP,
-    AZERBAIJANI_MAP
-];
+    AZERBAIJANI_MAP,
+    GEORGIAN_MAP
+);
 
-var Downcoder = {
-    'Initialize': function () {
-        if (Downcoder.map) {  // already made
-            return;
-        }
-        Downcoder.map = {};
-        Downcoder.chars = [];
-        for (var i = 0; i < ALL_DOWNCODE_MAPS.length; i++) {
-            var lookup = ALL_DOWNCODE_MAPS[i];
-            for (var c in lookup) {
-                if (lookup.hasOwnProperty(c)) {
-                    Downcoder.map[c] = lookup[c];
-                }
-            }
-        }
-        for (var k in Downcoder.map) {
-            if (Downcoder.map.hasOwnProperty(k)) {
-                Downcoder.chars.push(k);
-            }
-        }
-        Downcoder.regex = new RegExp(Downcoder.chars.join('|'), 'g');
-    }
-};
+const DOWNCODE_REGEX = new RegExp(Object.keys(DOWNCODE_MAP).join('|'), 'g');
 
 function downcode(slug) {
-    Downcoder.Initialize();
-    return slug.replace(Downcoder.regex, function (m) {
-        return Downcoder.map[m];
+    return slug.replace(DOWNCODE_REGEX, function (m) {
+        return DOWNCODE_MAP[m];
     });
 }
 
@@ -141,18 +128,19 @@ function URLify(s: string, num_chars: number) {
     // changes, e.g., "Petty theft" to "petty-theft"
     // remove all these words from the string before urlifying
     s = downcode(s);
-    var removelist = [
+    const removelist = [
         "a", "an", "as", "at", "before", "but", "by", "for", "from", "is",
         "in", "into", "like", "of", "off", "on", "onto", "per", "since",
         "than", "the", "this", "that", "to", "up", "via", "with"
     ];
-    var r = new RegExp('\\b(' + removelist.join('|') + ')\\b', 'gi');
+    const r = new RegExp('\\b(' + removelist.join('|') + ')\\b', 'gi');
     s = s.replace(r, '');
     // if downcode doesn't hit, the char will be stripped here
     s = s.replace(/[^-\w\s]/g, '');  // remove unneeded chars
     s = s.replace(/^\s+|\s+$/g, '');   // trim leading/trailing spaces
     s = s.replace(/[-\s]+/g, '-');     // convert spaces to hyphens
-    s = s.toLowerCase();               // convert to lowercase
-    return s.substring(0, num_chars);  // trim to first num_chars chars
+    s = s.substring(0, num_chars);     // trim to first num_chars chars
+    s = s.replace(/-+$/g, '');         // trim any trailing hyphens
+    return s.toLowerCase();            // convert to lowercase
 }
 export default URLify;
