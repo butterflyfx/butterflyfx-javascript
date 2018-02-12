@@ -1,6 +1,5 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var tunnel_1 = require("./tunnel");
 var fixture_1 = require("./api/fixture");
 var build_1 = require("./api/build");
 var urlify_1 = require("./lib/urlify");
@@ -15,14 +14,6 @@ var ButterflyFXClient = /** @class */ (function () {
         }
         this._token = token;
     }
-    ButterflyFXClient.prototype.tunnel = function (address) {
-        var options = {
-            projectId: this.project,
-            address: address,
-            apiKey: this._token
-        };
-        tunnel_1.tunnel(options);
-    };
     ButterflyFXClient.prototype.build = function (projectId) {
         if (projectId === void 0) { projectId = this.project; }
         return build_1.default.save({ project: projectId });

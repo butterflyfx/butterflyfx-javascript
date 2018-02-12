@@ -4,6 +4,7 @@ import { u } from 'umbrellajs';
 import unique from 'unique-selector';
 import * as picomodal from 'picomodal';
 import { PageRecorder, RecordingHistory } from './recorder';
+import * as basicContext from 'basiccontext';
 
 import YakuPromise from 'yaku';
 global.Promise = YakuPromise;
@@ -20,7 +21,7 @@ interface CrossPlatformStyleElement extends HTMLStyleElement {
     styleSheet;
 }
 
-function generateStyleSheet(ruleset) {
+function generateStyleSheet(ruleset): CrossPlatformStyleElement {
     var style = <CrossPlatformStyleElement>document.createElement('style');
     style.type = 'text/css';
     document.getElementsByTagName('head')[0].appendChild(style);
@@ -79,8 +80,7 @@ export default class ButterflyFX extends BaseClient {
     }
 
 
-    selectFixtureElement(): Promise<string> {
-        this.generateStyleSheet();
+    selectFixtureElement(highlightSelected = false): Promise<string> {
         let className = "butterflyfx-fixture-selector";
         let body = u(document.body.parentElement);
         body.addClass(className);
@@ -96,7 +96,7 @@ export default class ButterflyFX extends BaseClient {
             };
             clearClasses(u('.active.selected'));
             let element;
-            if (!e.ctrlKey) {
+            if (!(e.ctrlKey || highlightSelected)) {
                 element = u(document.body);
             }
             else if (e.target === document.body.parentElement) {
@@ -128,58 +128,141 @@ export default class ButterflyFX extends BaseClient {
                 body.removeClass(className);
                 body.off('mouseover', highlightSelectedFixture);
                 body.off('keydown', highlightSelectedFixture);
-                body.off('click', showFixtureDialog);
+                document.body.removeEventListener('click', showFixtureDialog, true);
                 body.off('contextmenu', showFixtureDialog);
                 let element = u(e.target);
                 element.trigger('mouseout');
                 if (e.type === "contextmenu") {
+                    e.stopPropagation();
                     resolve(SELECTOR_RECORDING);
                 }
                 else if (this.lastSelectedElement !== document.body && this.lastSelectedElement !== document.body.parentElement) {
                     let selector = unique(e.target).replace("html > body > ", "");
+                    e.stopPropagation();
                     resolve(selector);
                 }
                 else {
+                    e.stopPropagation();
                     resolve(null);
                 }
             }
             body.on('mouseover', highlightSelectedFixture);
             body.on('keydown', highlightSelectedFixture);
-            body.on('click', showFixtureDialog);
+            document.body.addEventListener('click', showFixtureDialog, true);
             body.on('contextmenu', showFixtureDialog);
+        });
+    }
+
+    _generateRecordingContextMenu(recording: PageRecorder) {
+        this.generateStyleSheet();
+        this._stylesheet.innerHTML = this._stylesheet.innerHTML + `
+        .basicContext,.basicContext *{box-sizing:border-box}.basicContextContainer{position:fixed;width:100%;height:100%;top:0;left:0;z-index:1000;-webkit-tap-highlight-color:transparent}.basicContext{position:absolute;opacity:0;-moz-user-select:none;-webkit-user-select:none;-ms-user-select:none;user-select:none}.basicContext__item{cursor:pointer}.basicContext__item--separator{float:left;width:100%;height:1px;cursor:default}.basicContext__item--disabled{cursor:default}.basicContext__data{min-width:140px;padding-right:20px;text-align:left;white-space:nowrap}.basicContext__icon{display:inline-block}.basicContext--scrollable{height:100%;-webkit-overflow-scrolling:touch;overflow-y:auto}.basicContext--scrollable .basicContext__data{min-width:160px}
+        .basicContext{padding:6px;background-color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.4),0 0 1px rgba(0,0,0,.2);border-radius:3px}.basicContext__item{margin-bottom:2px}.basicContext__item--separator{margin:4px 0;background-color:rgba(0,0,0,.1)}.basicContext__item--disabled{opacity:.5}.basicContext__item:last-child{margin-bottom:0}.basicContext__data{padding:6px 8px;color:#333;border-radius:2px}.basicContext__item:not(.basicContext__item--disabled):hover .basicContext__data{color:#fff;background-color:#4393e6}.basicContext__item:not(.basicContext__item--disabled):active .basicContext__data{background-color:#1d79d9}.basicContext__icon{margin-right:10px;width:12px;text-align:center}
+        `;
+        let items;
+        let showContext = (e) => basicContext.show(items, e);
+        document.body.addEventListener('contextmenu', showContext);
+        items = [
+            {
+                title: 'Insert value', icon: 'ion-plus-round', fn: (e) => {
+                    window.requestAnimationFrame(() => {
+                        this.selectFixtureElement(true).then((selector) => {
+                            let text = u(selector).text()
+                            let result = prompt("Enter value or use {{ variable }} for an environment variable", text);
+                            recording.insertValue(selector, result);
+                        });
+                    })
+                    return false;
+                }
+            },
+            {
+                title: 'Expect value', icon: 'ion-plus-round', fn: (e) => {
+                    window.requestAnimationFrame(() => {
+                        this.selectFixtureElement(true).then((selector) => {
+                            let text = u(selector).text()
+                            let result = prompt("Enter expected value", text);
+                            recording.expectValue(selector, result);
+                        });
+                    })
+                    return false;
+                }
+            },
+            {},
+            {
+                title: 'Stop recording', icon: 'ion-log-out', fn: (e) => {
+                    e.stopPropagation();
+                    recording.stopRecording();
+                    document.body.removeEventListener('contextmenu', showContext);
+                    basicContext.close();
+                }
+            },
+        ];
+
+    }
+
+    private showSaveDialog(fixture) {
+        let modal = picomodal({
+            'content': `<iframe id="bfx-frame" style="height: 50vh; min-height: 400px; min-width: 420px; width: 100%; border: none" src="${WEB_HOST}/dash/bookmarklet"></iframe>`,
+            'width': '50vw',
+            'height': '50vh',
+        }).afterClose(function (modal) { modal.destroy(); }).show();
+        let element = <HTMLFrameElement>document.querySelector('#bfx-frame');
+        this.messageHandler = new WindowMessageHandler(element.contentWindow, null, null);
+        this.messageHandler.addActionHandler('onPageLoad', (...args) => {
+            this.messageHandler.sendMessage("setFixture", fixture)
+        });
+        this.messageHandler.addActionHandler('onPageClose', (...args) => {
+            modal.close();
         });
     }
 
     showFixtureDialog() {
         let fixture = this.generateFixture();
-        this.selectFixtureElement().then((selector) => {
-            let promise: Promise<RecordingHistory[]> = Promise.resolve([]);;
-            if (selector === SELECTOR_RECORDING) {
+        picomodal({
+            'content': `<iframe id="bfx-selection-frame" style="height: 25vh; width: 100%; border: none; margin-left: -10px" src="${WEB_HOST}/dash/selection"></iframe>`,
+            'width': '25vw',
+            'height': '25vh',
+            "modalStyles": { "min-width": "420px" },
+            closeButton: false
+        }).afterCreate(modal => {
+            let element = <HTMLFrameElement>document.querySelector('#bfx-selection-frame');
+            this.generateStyleSheet();
+            this.messageHandler = new WindowMessageHandler(element.contentWindow, null, null);
+            this.messageHandler.addActionHandler('onStartRecording', (payload) => {
+                modal.close();
                 let recording = new PageRecorder();
-                promise = recording.startRecording();
-            }
-            else if (selector) {
-                fixture.selector = selector;
-            }
-            promise.then((history) => {
-                if (history.length > 0) {
-                    fixture.revision.rules = JSON.stringify(history);
+                if (payload.environments) {
+                    recording.environment = payload.environments[0];
+                    let variables = {};
+                    payload.environments[0].variables.forEach((item) => {
+                        variables[item.key] = item.value;
+                    })
+                    recording.environment.variables = variables;
                 }
-                let modal = picomodal({
-                    'content': `<iframe id="bfx-frame" style="height: 50vh; min-height: 400px; width: 100%; border: none" src="${WEB_HOST}/dash/bookmarklet"></iframe>`,
-                    'width': '50vw',
-                    'height': '50vh',
-                }).afterClose(function (modal) { modal.destroy(); }).show();
-                let element = <HTMLFrameElement>document.querySelector('#bfx-frame');
-                this.messageHandler = new WindowMessageHandler(element.contentWindow, null, null);
-                this.messageHandler.addActionHandler('onPageLoad', (...args) => {
-                    this.messageHandler.sendMessage("setFixture", fixture)
+                this._generateRecordingContextMenu(recording);
+                recording.startRecording().then((history) => {
+                    if (history.length > 0) {
+                        fixture.revision.rules = JSON.stringify(history);
+                    }
+                    this.showSaveDialog(fixture);
                 });
-                this.messageHandler.addActionHandler('onPageClose', (...args) => {
-                    modal.close();
+            });
+            this.messageHandler.addActionHandler('onGenerateSnapshot', (...args) => {
+                modal.close();
+                this.selectFixtureElement().then((selector) => {
+                    if (selector) {
+                        fixture.selector = selector;
+                    }
+                    this.showSaveDialog(fixture);
                 });
-            })
-        })
+            });
+            this.messageHandler.addActionHandler('onPageClose', (...args) => {
+                modal.close();
+            });
+        }).afterClose((modal, event) => {
+            modal.destroy();
+        }).show();
     }
+
 }
 

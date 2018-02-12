@@ -1,4 +1,3 @@
-import { tunnel, TunnelOptions } from './tunnel';
 import * as api from './api';
 import Fixture from './api/fixture';
 import Build from './api/build';
@@ -22,14 +21,6 @@ export default class ButterflyFXClient {
         this._token = token;
     }
 
-    tunnel(address: string) {
-        let options = {
-            projectId: this.project,
-            address: address,
-            apiKey: this._token
-        };
-        tunnel(options);
-    }
 
     build(projectId = this.project) {
         return Build.save({ project: projectId });
