@@ -167,9 +167,15 @@ export default class ButterflyFX extends BaseClient {
                 title: 'Insert value', icon: 'ion-plus-round', fn: (e) => {
                     window.requestAnimationFrame(() => {
                         this.selectFixtureElement(true).then((selector) => {
+                            let element = document.querySelector(selector);
+                            if (element.tagName != "INPUT") {
+                                return;
+                            }
                             let text = u(selector).text()
                             let result = prompt("Enter value or use {{ variable }} for an environment variable", text);
-                            recording.insertValue(selector, result);
+                            if (result) {
+                                recording.insertValue(selector, result);
+                            }
                         });
                     })
                     return false;
@@ -231,7 +237,7 @@ export default class ButterflyFX extends BaseClient {
             this.messageHandler.addActionHandler('onStartRecording', (payload) => {
                 modal.close();
                 let recording = new PageRecorder();
-                if (payload.environments) {
+                if (payload && payload.environments && payload.environments.length) {
                     recording.environment = payload.environments[0];
                     let variables = {};
                     payload.environments[0].variables.forEach((item) => {

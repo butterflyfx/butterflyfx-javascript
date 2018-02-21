@@ -155,9 +155,15 @@ var ButterflyFX = /** @class */ (function (_super) {
                 title: 'Insert value', icon: 'ion-plus-round', fn: function (e) {
                     window.requestAnimationFrame(function () {
                         _this.selectFixtureElement(true).then(function (selector) {
+                            var element = document.querySelector(selector);
+                            if (element.tagName != "INPUT") {
+                                return;
+                            }
                             var text = umbrellajs_1.u(selector).text();
                             var result = prompt("Enter value or use {{ variable }} for an environment variable", text);
-                            recording.insertValue(selector, result);
+                            if (result) {
+                                recording.insertValue(selector, result);
+                            }
                         });
                     });
                     return false;

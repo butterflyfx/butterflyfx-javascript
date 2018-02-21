@@ -55,8 +55,9 @@ class PageRecorder {
 
     insertValue(selector: string, value: string) {
         let diff = dd.diff(this._originalBody, this.body);
+        let element = document.querySelector(selector)
         let result = Handlebars.compile(value.trim())(this.environment.variables)
-        document.querySelector(selector).setAttribute('value', result);
+        element.setAttribute('value', result);
         this.history.push({
             event: "change",
             target: selector,

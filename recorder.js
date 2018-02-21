@@ -33,8 +33,9 @@ var PageRecorder = /** @class */ (function () {
     };
     PageRecorder.prototype.insertValue = function (selector, value) {
         var diff = dd.diff(this._originalBody, this.body);
+        var element = document.querySelector(selector);
         var result = handlebars_1.default.compile(value.trim())(this.environment.variables);
-        document.querySelector(selector).setAttribute('value', result);
+        element.setAttribute('value', result);
         this.history.push({
             event: "change",
             target: selector,
