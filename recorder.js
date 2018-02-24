@@ -1,12 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-var DiffDOM = require("diff-dom");
 var unique_selector_1 = require("unique-selector");
 var handlebars_1 = require("handlebars");
-var dd = new DiffDOM();
+var himalaya_1 = require("himalaya");
+var jsondiffpatch = require('jsondiffpatch').create();
 var ALLOWED_KEYBOARD_EVENTS = {
     "Enter": "\n",
     "Tab": "\t"
+};
+function removeComments(nodes) {
+    if (!nodes) {
+        return;
+    }
+    return nodes.filter(function (node) {
+        if (node.type === 'comment') {
+            return false;
+        }
+        else {
+            node.children = removeComments(node.children);
+            return true;
+        }
+    });
+}
+var unique = function (el) {
+    var id = el.id;
+    if (el.id.indexOf('ember') === 0) {
+        el.id = "";
+    }
+    var selector = unique_selector_1.default(el).replace("html > body > ", "");
+    el.id = id;
+    if (selector.indexOf('>') !== -1) {
+        if (document.querySelectorAll(selector).length > 1) {
+            var subselector = selector.split('>').pop();
+            return unique(el.parentNode) + ("> " + subselector);
+        }
+        else {
+            return selector;
+        }
+    }
+    return selector;
 };
 function isValidKeyboardEvent(e) {
     var event = e;
@@ -14,58 +46,90 @@ function isValidKeyboardEvent(e) {
 }
 var PageRecorder = /** @class */ (function () {
     function PageRecorder() {
+        this.recordHTML = false;
         this.body = document.body;
         this.history = [];
     }
+    PageRecorder.prototype.generateHTMLJSON = function () {
+        if (!this.recordHTML) {
+            return;
+        }
+        var doc = this.body.parentElement.cloneNode(true);
+        var inputs = Array.from(doc.querySelectorAll("input"));
+        inputs.forEach(function (e) { return e.setAttribute('value', e.value); });
+        return removeComments(himalaya_1.parse(doc.outerHTML));
+    };
+    PageRecorder.prototype.mergeHTMLDiff = function (item) {
+        var output = {
+            html: this.generateHTMLJSON(),
+        };
+        var lastEvent = this.history[this.history.length - 1];
+        if (lastEvent && lastEvent.html) {
+            output['diff'] = jsondiffpatch.diff(lastEvent.html, output.html);
+        }
+        return Object.assign({}, item, output);
+    };
     PageRecorder.prototype.stopRecording = function () {
         this.body.removeEventListener('change', this._diffEventListener);
+        if (this.recordHTML) {
+            this.history.forEach(function (item) {
+                if (item.diff) {
+                    delete item.html;
+                }
+            });
+        }
         this._resolve(this.history);
         return this.history;
     };
     PageRecorder.prototype.expectValue = function (selector, value) {
-        var diff = dd.diff(this._originalBody, this.body);
-        this.history.push({
+        var item = {
             event: "expect",
             target: selector,
-            diff: diff,
             value: value
-        });
+        };
+        if (this.recordHTML) {
+            item = this.mergeHTMLDiff(item);
+        }
+        this.history.push(item);
     };
     PageRecorder.prototype.insertValue = function (selector, value) {
-        var diff = dd.diff(this._originalBody, this.body);
         var element = document.querySelector(selector);
         var result = handlebars_1.default.compile(value.trim())(this.environment.variables);
         element.setAttribute('value', result);
-        this.history.push({
+        var item = {
             event: "change",
             target: selector,
-            diff: diff,
             value: value
-        });
+        };
+        if (this.recordHTML) {
+            item = this.mergeHTMLDiff(item);
+        }
+        this.history.push(item);
     };
-    PageRecorder.prototype.startRecording = function (body) {
+    PageRecorder.prototype.startRecording = function (body, recordHTML) {
         var _this = this;
         if (body === void 0) { body = document.body; }
+        if (recordHTML === void 0) { recordHTML = true; }
         this.body = body;
+        this.recordHTML = recordHTML;
         return new Promise(function (resolve, reject) {
             _this._resolve = resolve;
-            var original = _this.body.cloneNode(true);
-            _this._originalBody = original;
             _this._stopEventListener = function () { return _this.stopRecording(); };
             _this._selectorEventListener = function (e) {
                 var target = e.target;
-                e.target['_bfxSelector'] = unique_selector_1.default(target);
+                e.target['_bfxSelector'] = unique(target);
             };
             _this._diffEventListener = function (e) {
                 if (e.type == 'keydown' && !isValidKeyboardEvent(e)) {
                     return;
                 }
-                var diff = dd.diff(original, _this.body);
                 var item = {
                     event: e.type,
-                    target: e.target['_bfxSelector'] || unique_selector_1.default(e.target),
-                    diff: diff,
+                    target: e.target['_bfxSelector'] || unique(e.target),
                 };
+                if (_this.recordHTML) {
+                    item = _this.mergeHTMLDiff(item);
+                }
                 if (item.target.indexOf('basicContext') !== -1) {
                     return;
                 }
