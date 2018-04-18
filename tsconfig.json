@@ -3,19 +3,9 @@
         "target": "es5",
         "module": "commonjs",
         "sourceMap": false,
-        "lib": [
-            "dom",
-            "es2015",
-            "es5",
-            "es6"
-        ]
+        "lib": ["dom", "es2015", "es5", "es6"],
+        "outDir": "build/"
     },
-    "files": [
-        "index.ts",
-        "install.ts",
-        "browser.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+    "files": ["src/index.ts", "src/install.ts", "src/browser.ts"],
+    "exclude": ["node_modules"]
 }

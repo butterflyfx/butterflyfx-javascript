@@ -7,7 +7,7 @@ export default class WindowMessageHandler {
 
     constructor(target: Window, targetOrigin: string, source: Window) {
         this.target = target || window;
-        this.targetOrigin = targetOrigin || '*';
+        this.targetOrigin = targetOrigin || "*";
         this.responseHandlers = <Map<string, Function>>{};
         this.actionHandlers = <Map<string, Function>>{};
         this.listener = (event: MessageEvent) => {
@@ -18,7 +18,7 @@ export default class WindowMessageHandler {
     }
 
     addActionHandler(key, value) {
-        if (typeof (value) !== "function") {
+        if (typeof value !== "function") {
             throw new Error("Action handler value must be a function");
         }
         this.actionHandlers[key] = value;
@@ -29,16 +29,21 @@ export default class WindowMessageHandler {
         let handlers = this.actionHandlers;
         if (data.action === "_response") {
             this.handleResponse(data);
-        }
-        else if (data.action) {
+        } else if (data.action) {
             let callback = handlers[data.action];
-            let result = this.handleAction(data.action, data.payload);
+            if (!this.target && callback) {
+                this.target = event.source;
+            }
+            let result = this.handleAction(data.action, event, data.payload);
             if (!data.responseId) {
                 return;
             }
             if (result) {
                 // Return a response using the response id given
-                event.source.postMessage({ action: "_response", payload: result, responseId: data.responseId }, event.origin);
+                event.source.postMessage(
+                    { action: "_response", payload: result, responseId: data.responseId },
+                    event.origin
+                );
             }
         }
     }
@@ -52,11 +57,11 @@ export default class WindowMessageHandler {
     }
 
     disconnect() {
-        window.removeEventListener('message', this.listener);
+        window.removeEventListener("message", this.listener);
     }
 
     handleResponse(data) {
-        if (this.responseHandlers[data.responseId] && typeof (this.responseHandlers[data.responseId]) === "function") {
+        if (this.responseHandlers[data.responseId] && typeof this.responseHandlers[data.responseId] === "function") {
             this.responseHandlers[data.responseId](data.payload);
         }
     }
@@ -64,13 +69,17 @@ export default class WindowMessageHandler {
     sendMessage(action, payload = null, responseId) {
         // Genreate a unique id for this message's response
         if (!responseId) {
-            responseId = Date.now() + Math.random().toString(16).substring(2);
+            responseId =
+                Date.now() +
+                Math.random()
+                    .toString(16)
+                    .substring(2);
         }
         return new Promise((resolve, reject) => {
             this.responseHandlers[responseId] = resolve;
             // Send a json serializable clone of the payload to ensure compatibility
             payload = JSON.parse(JSON.stringify(payload));
             this.target.postMessage({ action: action, payload: payload, responseId: responseId }, this.targetOrigin);
-        })
+        });
     }
 }
