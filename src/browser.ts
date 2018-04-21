@@ -243,7 +243,7 @@ export default class ButterflyFX extends BaseClient {
             width: "50vw",
             height: "50vh"
         })
-            .afterClose(function (modal) {
+            .afterClose(function(modal) {
                 modal.destroy();
             })
             .show();
@@ -271,9 +271,17 @@ export default class ButterflyFX extends BaseClient {
                     modal.close();
                     let recording = new PageRecorder([], fixture);
                     if (payload && payload.environments && payload.environments.length) {
-                        recording.environment = payload.environments[0];
+                        let selectedEnvironment;
+                        if (payload.selectedEnvironmentId) {
+                            selectedEnvironment = payload.environments.filter(
+                                (env) => env.id === payload.selectedEnvironmentId
+                            )[0];
+                        } else {
+                            selectedEnvironment = payload.environments[0];
+                        }
+                        recording.environment = selectedEnvironment;
                         let variables = {};
-                        payload.environments[0].variables.forEach((item) => {
+                        selectedEnvironment.variables.forEach((item) => {
                             variables[item.key] = item.value;
                         });
                         recording.environment.variables = variables;
