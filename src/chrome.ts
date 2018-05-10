@@ -36,7 +36,7 @@ export function hasExtensionInstalled(): Promise<boolean> {
     });
 }
 
-interface TunnelOptions {
+export interface TunnelOptions {
     apiKey: string;
     projectId: number;
 }

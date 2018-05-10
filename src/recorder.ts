@@ -1,5 +1,4 @@
 import uniqueSelector from "unique-selector";
-import Handlebars from "handlebars";
 import { parse, stringify } from "himalaya";
 import { RecordingHistory, HTMLJSON, TestEnvironment } from "./common";
 import Fixture from "./api/fixture";
@@ -7,6 +6,7 @@ import * as get from "lodash.get";
 import * as chrome from "./chrome";
 
 import { DiffPatcher } from "jsondiffpatch";
+import GlobalContext from "./contexts/global";
 const patchModule = require("jsondiffpatch");
 let jsondiffpatch;
 if (patchModule && patchModule.create) {
@@ -75,7 +75,9 @@ class PageRecorder {
     private recordHTML = false;
     private isRecording = true;
 
-    public environment: TestEnvironment;
+    public environment: TestEnvironment = {
+        variables: {}
+    };
     private body = document.body;
 
     private _resolve: Function;
@@ -155,7 +157,8 @@ class PageRecorder {
 
     insertValue(selector: string, value: string) {
         let element = document.querySelector(selector);
-        let result = Handlebars.compile(value.trim())(this.environment.variables);
+        let context = new GlobalContext(this.environment);
+        let result = context.parse(value.trim());
         element.setAttribute("value", result);
         let item = <RecordingHistory>{
             event: "change",
@@ -190,6 +193,7 @@ class PageRecorder {
                 }
             };
             this._diffEventListener = (e) => {
+                let context = new GlobalContext(this.environment);
                 if (e.type == "keydown" && !isValidKeyboardEvent(e)) {
                     return;
                 }
@@ -214,17 +218,20 @@ class PageRecorder {
                     if (!e.target["value"]) {
                         return;
                     }
+                    let lastEvent = this.history[this.history.length - 1] || { value: "", event: "", target: "" };
+                    if (lastEvent.target == item.target && lastEvent.event == "change") {
+                        return;
+                    }
                     item.event = "change";
                 }
                 if (item.event === "change") {
                     item.value = e.target["value"];
                     let lastEvent = this.history[this.history.length - 1] || { value: "", event: "" };
                     let lastValue = lastEvent.value || "";
-                    if (this.environment) {
-                        lastValue = Handlebars.compile(lastValue.trim())(this.environment.variables);
-                    } else {
-                        lastValue = lastValue.trim();
+                    if (lastEvent.event === "change" && lastValue === item.value.trim()) {
+                        return;
                     }
+                    lastValue = context.parse(lastValue.trim());
                     // Avoid duplicate change events.
                     if (lastEvent.event === "change" && lastValue === item.value.trim()) {
                         return;
