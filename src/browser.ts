@@ -300,7 +300,9 @@ export default class ButterflyFX extends BaseClient {
                         if (selector) {
                             fixture.selector = selector;
                         }
-                        this.showSaveDialog(fixture);
+                        chrome.setActiveRecordingSession({ history: [], environment: {}, fixture }).then(()=>{
+                            this.showSaveDialog(fixture);
+                        })
                     });
                 });
                 this.messageHandler.addActionHandler("onPageClose", (...args) => {
