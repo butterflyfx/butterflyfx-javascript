@@ -11,6 +11,7 @@ import YakuPromise from "yaku";
 global.Promise = YakuPromise;
 
 import Fixture from "./api/fixture";
+import RandomContext from "./contexts/random";
 
 let WEB_HOST = window["BUTTERFLYFX_WEB_HOST"] || "https://www.butterflyfx.io";
 
@@ -223,6 +224,21 @@ export default class ButterflyFX extends BaseClient {
                     return false;
                 }
             },
+            {
+                title: "Capture value",
+                icon: "ion-plus-round",
+                fn: (e) => {
+                    window.requestAnimationFrame(() => {
+                        this.selectFixtureElement(true).then((selector) => {
+                            let result = prompt(
+                                `Enter the name of the variable for storing the value of \n ${selector}`
+                            );
+                            recording.captureValue(selector, result);
+                        });
+                    });
+                    return false;
+                }
+            },
             {},
             {
                 title: "Stop recording",
@@ -243,7 +259,7 @@ export default class ButterflyFX extends BaseClient {
             width: "50vw",
             height: "50vh"
         })
-            .afterClose(function(modal) {
+            .afterClose(function (modal) {
                 modal.destroy();
             })
             .show();
@@ -300,9 +316,9 @@ export default class ButterflyFX extends BaseClient {
                         if (selector) {
                             fixture.selector = selector;
                         }
-                        chrome.setActiveRecordingSession({ history: [], environment: {}, fixture }).then(()=>{
+                        chrome.setActiveRecordingSession({ history: [], environment: {}, fixture }).then(() => {
                             this.showSaveDialog(fixture);
-                        })
+                        });
                     });
                 });
                 this.messageHandler.addActionHandler("onPageClose", (...args) => {

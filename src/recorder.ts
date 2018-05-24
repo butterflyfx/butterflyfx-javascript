@@ -2,8 +2,9 @@ import uniqueSelector from "unique-selector";
 import { parse, stringify } from "himalaya";
 import { RecordingHistory, HTMLJSON, TestEnvironment } from "./common";
 import Fixture from "./api/fixture";
-import * as get from "lodash.get";
+import * as _ from "lodash";
 import * as chrome from "./chrome";
+import * as $ from "jquery";
 
 import { DiffPatcher } from "jsondiffpatch";
 import GlobalContext from "./contexts/global";
@@ -155,6 +156,18 @@ class PageRecorder {
         this.history.push(item);
     }
 
+    captureValue(selector: string, variable: string): string {
+        let value = <string>$(selector).text() || ($(selector).val() as string);
+        _.set(this.environment, `variables.${variable}`, value);
+        let item = <RecordingHistory>{
+            event: "capture",
+            target: selector,
+            value: variable
+        };
+        this.history.push(item);
+        return value;
+    }
+
     insertValue(selector: string, value: string) {
         let element = document.querySelector(selector);
         let context = new GlobalContext(this.environment);
@@ -219,7 +232,7 @@ class PageRecorder {
                         return;
                     }
                     let lastEvent = this.history[this.history.length - 1] || { value: "", event: "", target: "" };
-                    if (lastEvent.target == item.target && lastEvent.event == "change") {
+                    if (lastEvent.target == item.target) {
                         return;
                     }
                     item.event = "change";
@@ -263,7 +276,7 @@ class PageRecorder {
             Array.from(document.body.querySelectorAll("iframe")).forEach((frame) => {
                 try {
                 } catch (e) {
-                    let body = get(frame, "contentWindow.document.body");
+                    let body = _.get(frame, "contentWindow.document.body");
                     if (body) {
                         let selector = "iframe" + unique(frame);
                         body.setAttribute("bfx-frame", selector);
